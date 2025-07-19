@@ -1,15 +1,17 @@
+from dotenv import load_dotenv
 import openai
 import os
 
+load_dotenv()
+
 # Initialize OpenAI client
 client = openai.OpenAI(
-    base_url="https://aiportalapi.stu-platform.live/jpe",
-    api_key="sk-GlKxsGKVhd4ftqS1L33gZw"
+    api_key = os.getenv("OPENAI_API_KEY"),
+    base_url = os.getenv("OPENAI_BASE_URL")
 )
 
 # Ask user to input the path to the code file
 file_path = input("🔍 Enter the full path to your code file: ").strip()
-# file_path = "D:/van/learning/AI Elevate AI Application Engineer/workshop1/test/code_block.py"
 
 # Extract directory and base name
 dir_name = os.path.dirname(file_path)
@@ -22,25 +24,15 @@ with open(file_path, "r", encoding="utf-8") as file:
     code_content = file.read()
 
 # Prepare the prompt (instruct model to reply ONLY with code)
-prompt = f"""
-Please analyze the code and add comments for each block (e.g., class definition, method definitions, loops, conditionals).
-Rule: 
-Each comment should describe the purpose of the block as a whole, rather than commenting on each individual line.
-The goal is to provide a brief summary of what each block of code does.
-**DO NOT fix or modify any syntax errors or formatting. Even if the code is invalid, keep it as-is.
-ONLY return the updated code block with comments added, NO extra text.
+with open("comment_prompt.txt", "r", encoding="utf-8") as prompt_file:
+    prompt_template = prompt_file.read()
 
-Code:
-\"\"\"
-{code_content}
-\"\"\"
-"""
+prompt = prompt_template.replace("{{CODE_CONTENT}}", code_content)
 
 # Call OpenAI Chat Completion API
 response = client.chat.completions.create(
     model="GPT-4o-mini",
     messages=[
-        {"role": "system", "content": "You're a highly skilled software engineer."},
         {"role": "user", "content": prompt}
     ],
     temperature=0.3,
